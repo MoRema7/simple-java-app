@@ -8,10 +8,10 @@ pipeline{
                 }
             }
         }
-        stage('deploy'){
+        stage('test'){
             steps{
                 script{
-                  echo " Deployment is running " 
+                  echo " TesT is running " 
                 }
             }
         }
