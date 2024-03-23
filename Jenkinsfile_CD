@@ -1,44 +1,37 @@
 pipeline{
-agent{
-label 'aws-eks-agent'
-}
-stages{
-stage('build'){
-steps{
-script{
-sh 'docker build -t java-app .'
-}
-}
-}
-agent{
-}
-stages{
-stage('build'){
-steps{
-script{
-sh 'mvn clean package'
-stage('push'){
-steps{
-script{
-withCredentials([usernamePassword(credentialsId: 'dockerhub',
-passwordVariable: 'Password', usernameVariable: 'Username')]) {
-sh 'docker login --username $Username --password $Password'
-sh 'docker tag java-app $Username/java-app'
-sh 'docker push $Username/java-app'
+    agent any
 
-}
-}
-}
-}
-stage('deploy'){
-steps{
-script{
-withAWS(credentials: 'aws-access-key', region: 'us-east-1') {
-sh 'aws eks update-kubeconfig --region us-east-1 --name eks-cluster-jen'
-sh 'kubectl apply -f ./k8s/deployment.yaml'
-}
-}
-}
-}
-}
+    stages{
+
+        stage('build and package'){
+            steps{
+                script{
+                    sh 'docker build -t javaapp .'
+                }
+            }
+        }
+
+        stage('push'){
+            steps{
+                script{
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'password', usernameVariable: 'username')]) {
+                    sh 'docker login --username $username --password $password '
+                    sh 'docker tag javaapp $username/javaapp'
+                    sh 'docker push $username/javaapp'
+                    }
+                }
+            }
+        }
+
+        stage('deploy'){
+            steps{
+                script{
+                    withAWS(credentials:'aws-access-key',region:'us-east-1') {
+                        sh 'aws eks update-kubeconfig --region us-east-1 --name eks-cluster-jen'
+                        sh 'kubectl apply -f ./k8s/deployment.yaml'
+                    }
+                }
+            }
+        }
+    }
 }
